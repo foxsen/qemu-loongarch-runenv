@@ -73,7 +73,7 @@ Here is a short explanation for major files in this repository:
 * loongarch_bios_0310.bin, loongarch_bios_0310_debug.bin. The loongarch UEFI bios binary.
 * vmlinux. The loongarch linux kernel binary.
 * busybox-rootfs.img. A minimal root file system for linux/loongarch built out of busybox 1.35.0.
-* loongarch-cross-gdb_v12.0.50.20220221-git.tar.bz2. Cross gdb to debug loongarch binaries on X86.
+* loongarch-cross-gdb_v12.0.50.20220221-git.tar.bz2. Cross gdb to debug loongarch binaries on X86. sudo tar xjvf -C /opt/
 
 ## source and build methods
 
