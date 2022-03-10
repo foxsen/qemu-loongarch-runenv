@@ -56,6 +56,14 @@ The execution of qemu has three major stages:
 * Second, with -kernel option, the BIOS will try to load and execute the kernel. If no -kernel option given, it will run a UEFI shell.
 * Third, with -initrd option and given kernel cmdline, the linux kernel will try to run a minimal system.
 
+Default booted interface without any options:
+
+![booted interface](./pics/booted.png)
+
+Booted interface with ./run_loongarch.sh -g
+
+![graphic booted interface](./pics/graphic-booted.png)
+
 ## files 
 
 Here is a short explanation for major files in this repository:
@@ -179,6 +187,11 @@ cd build
 ../configure --target=loongarch64-unknown-linux-gnu --prefix=/opt/gdb
 make
 sudo make install
+
+A simple example session is demoed in the following pictures:
+
+![run with debug on](./pics/run-with-debug.png)
+![remote debug](./pics/remote-debug.png)
 
 ## some notes
 
