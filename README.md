@@ -182,6 +182,10 @@ sudo make install
 
 ## some notes
 
+### about the dependence of qemu/gdb binary
+
+Different hosts have different installed packages and versions, it is normal that the provided qemu and gdb binary might fail to run. Please building your own version according the instructions in previous section. 
+
 ### Cross debugging the linux kernel
 
 The vmlinux binary in the repository has been stripped off its symbols to reduce the size.
@@ -202,6 +206,7 @@ Then:
 
 * Improve the bios speed. Presently, the bios code is not customized for qemu. It will take around 10 seconds to boot to the point of kernel loading. We plan to reduce this time later. 
 * some full examples of kernel debugging
+* a docker file to reproduce all the components
 * More tests and fixes
 
 ## References
