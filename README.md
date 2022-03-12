@@ -77,7 +77,7 @@ Here is a short explanation for major files in this repository:
 
 ## source and build methods
 
-For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/loongson/build-tools/releases/download/2021.12.21/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). Update this package to /opt, then add /opt/cross-tools/bin to your PATH. 
+For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/loongson/build-tools/releases/download/2021.12.21/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). Unpack this package to /opt, then add /opt/cross-tools/bin to your PATH. 
 
     foxsen@foxsen-ThinkPad-T450:~/xinyan/algo$ /opt/cross-tools-1218/bin/loongarch64-unknown-linux-gnu-gcc -v
     Using built-in specs.
@@ -112,6 +112,7 @@ Otherwise you will see error like this:
 
 Will update this when a better version is released.
 
+Note: Please use given toolchain. Don't use gcc from gcc.org. Support for loongarch is not yet upstreamed! And we need a cross compiling toolchain, that is, running on x86 and producing code for loongarch.
 Note: Please DON'T use gcc8 from loongnix: the ABI is changing! we are using the lastest open source BIOS and kernel code, which requires open source toolchain(gcc v12.x).
 
 ### qemu
