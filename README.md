@@ -77,12 +77,42 @@ Here is a short explanation for major files in this repository:
 
 ## source and build methods
 
-For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/loongson/build-tools/releases/download/2021.12.21/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). This toolchain has two known flaws on ubuntu platforms: 
+For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/loongson/build-tools/releases/download/2021.12.21/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). Update this package to /opt, then add /opt/cross-tools/bin to your PATH. 
+
+    foxsen@foxsen-ThinkPad-T450:~/xinyan/algo$ /opt/cross-tools-1218/bin/loongarch64-unknown-linux-gnu-gcc -v
+    Using built-in specs.
+    COLLECT_GCC=/opt/cross-tools-1218/bin/loongarch64-unknown-linux-gnu-gcc
+    COLLECT_LTO_WRAPPER=/opt/cross-tools-1218/bin/../libexec/gcc/loongarch64-unknown-linux-gnu/12.0.0/lto-wrapper
+    Target: loongarch64-unknown-linux-gnu
+    Configured with: ../configure --prefix=/opt/cross-tools --build=x86_64-cross-linux-gnu --host=x86_64-cross-linux-gnu --target=loongarch64-unknown-linux-gnu --with-sysroot=/opt/cross-tools/target --disable-multilib --enable-nls --enable-__cxa_atexit --enable-threads=posix --with-system-zlib --enable-libstdcxx-time --enable-checking=release --enable-languages=c,c++,fortran,objc,obj-c++,lto
+    Thread model: posix
+    Supported LTO compression algorithms: zlib zstd
+    gcc version 12.0.0 20211202 (experimental) (GCC)
+
+This toolchain has two known flaws on ubuntu platforms: 
 
 1. Due to statically linking, the bfd plugin libdep.so will lead to failures. rm -f /opt/cross-tools/lib/bfd-plugins/libdep.so can fix it.
-2. Also due to statically linking, the locale handling is not so right that it fail the kernel script check. export LC_ALL=C; export LANG=C; export LANGUAGE=C before make fix it.
+2. Also due to statically linking, the locale handling is not so right that it fail the kernel script check. run the following command before make:
+
+    export LC_ALL=C; 
+    export LANG=C;
+    export LANGUAGE=C
+
+Otherwise you will see error like this:
+
+      HOSTCC  scripts/kconfig/symbol.o
+      HOSTCC  scripts/kconfig/util.o
+      HOSTLD  scripts/kconfig/conf
+    loongarch64-unknown-linux-gnu-gcc: unknown assembler invoked
+    scripts/Kconfig.include:50: Sorry, this assembler is not supported.
+    make[2]: *** [scripts/kconfig/Makefile:77：syncconfig] 错误 1
+    make[1]: *** [Makefile:619：syncconfig] 错误 2
+    make: *** [Makefile:721：include/config/auto.conf.cmd] 错误 2
+    make: *** [include/config/auto.conf.cmd] 正在删除文件“include/generated/autoconf.h”
 
 Will update this when a better version is released.
+
+Note: Please DON'T use gcc8 from loongnix: the ABI is changing! we are using the lastest open source BIOS and kernel code, which requires open source toolchain(gcc v12.x).
 
 ### qemu
 
@@ -166,6 +196,18 @@ export LD_LIBRARY_PATH=$CC_PREFIX/loongarch64-unknown-linux-gnu/lib/:$LD_LIBRARY
 
 export ARCH=loongarch
 export CROSS_COMPILE=loongarch64-unknown-linux-gnu-
+```
+You can create a file with the above content, for example, env.sh. then type:
+
+```bash
+source env.sh
+```
+
+before the following operations. This is to setup necessary environments in current shell. 
+Don't run it like this because it won't affect current shell:
+
+```bash
+./env.sh
 ```
 
 ```bash
