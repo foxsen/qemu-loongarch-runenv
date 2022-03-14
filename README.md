@@ -64,6 +64,29 @@ Booted interface with ./run_loongarch.sh -g
 
 ![graphic booted interface](./pics/graphic-booted.png)
 
+## emulated machine
+
+This qemu emulator emulates a target machine ‘virt’, which is different from a real loongarch machine. The real loongarch machine today can have many different brands and configuration, but most of them are using Loongson3A5000/Loongson3B5000/Loongson3C5000 CPUs, and Loongson7A1000/7A2000 bridge chips. While the 'virt' machine, as its name indicates, use qemu's virtio framework to simulate all kinds of peripherals, such as the disk, the network adapter and so on.
+
+The machine and cpu supported:
+
+    foxsen@foxsen-ThinkPad-T450:~/software/qemu-loongarch-runenv$ ./qemu-system-loongarch64 -M ?
+    Supported machines are:
+    none                 empty machine
+    virt                 Loongson-3A5000 LS7A1000 machine (default)
+    foxsen@foxsen-ThinkPad-T450:~/software/qemu-loongarch-runenv$ ./qemu-system-loongarch64 -cpu ?
+    Loongson-3A5000-loongarch-cpu
+
+For the CPU part, most Loongson3A5000 features are supported, so that the open source loongson kernel can be directly used. You can refer to Loongson Architecture Manuals and Loongson3A5000 manual for more details, check https://github.com/loongson/LoongArch-Documentation for them.
+
+For the machine part, you can add any virtio device to the machine via qemu's command line options. For example, we are using these options to add vga/keyboard/mouse to the machine:
+
+    -vga virtio -device virtio-keyboard-pci -device virtio-mouse-pci
+
+Read qemu's manual for adding more devices if needed. If you want to write a driver for these devices, refer to the linux kernel. You can use -device ? option to show all the devices that can be added.
+
+Beside the virtio devices, the Loongson7A1000 bridge's pcie controller, UART serial port, Real Time Clock and power management ports are emulated. For example, you can find a 16550 serial port at physical address 0x1fe001e0, a RTC port at 0x10085010, PCI config space at 0x20000000, IO at 0x18004000UL, and so on. Read the code in qemu's source directory hw/loongarch to find more information. Refer to the linux kernel source for example usage of this devices.
+
 ## files 
 
 Here is a short explanation for major files in this repository:
