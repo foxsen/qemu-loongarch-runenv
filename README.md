@@ -1,7 +1,7 @@
 # qemu-loongarch-runenv
 
 This is an environment for running loongarch bios and OS on X86 machines, all
-components are open source: 
+components are open source:
 
     * Qemu. The simulator that is used to simulated a loongarch machine on PC.
     * Toolchain. For cross compiling loongarch binaries.
@@ -46,7 +46,7 @@ Build and install a qemu by yourself to prevent this kinds of problems.
 
 Examples:
 
-* To run with a qemu GUI: ./run_loongarch.sh -g 
+* To run with a qemu GUI: ./run_loongarch.sh -g
 * To run with a debug stub: ./run_loongarch.sh -d or ./run_loongarch.sh -D
 * To test your own kernel: ./run_loongarch.sh -k <yourkernel>
 
@@ -83,11 +83,175 @@ For the machine part, you can add any virtio device to the machine via qemu's co
 
     -vga virtio -device virtio-keyboard-pci -device virtio-mouse-pci
 
+By default, a virtio network adapter and a virtio VGA device is added to the emulated machine.
+
 Read qemu's manual for adding more devices if needed. If you want to write a driver for these devices, refer to the linux kernel. You can use -device ? option to show all the devices that can be added.
 
-Beside the virtio devices, the Loongson7A1000 bridge's pcie controller, UART serial port, Real Time Clock and power management ports are emulated. For example, you can find a 16550 serial port at physical address 0x1fe001e0, a RTC port at 0x10085010, PCI config space at 0x20000000, IO at 0x18004000UL, and so on. Read the code in qemu's source directory hw/loongarch and the 7A1000 manual to find more information. Refer to the linux kernel source for example usage of this devices.
+Beside the virtio devices, the Loongson7A1000 bridge's pcie controller, UART serial port, Real Time Clock and power management ports are emulated. For example, you can find a 16550 serial port at physical address 0x1fe001e0, a RTC port at 0x100d0010, PCI config space at 0x20000000, IO at 0x18004000UL, and so on. Read the code in qemu's source directory hw/loongarch and the 7A1000 manual to find more information. Refer to the linux kernel source for example usage of the devices.
 
-## files 
+The following LS3A5000 functions are NOT implemented(might be incomplete):
+
+* address routing registers, table 3-6
+* IOCSR is not mapped to system physical memory address space, that is, you cannot access them via load/store via phys addr 0x1fe00000 + offset. You must use iocsr special read/write instruction iocsrrd/wr to access IOCSR registers. Normal load/stores will trigger exceptions.
+* part of IOCSR is not emulated, writes will be discarded, reads will return random value
+    - all writable chip configuration register in chapter4, such as function set register(iocsr 0x180, table 4-5)
+    - legacy interrupts, section 11.1. so iocsrrd/wr of 0x1400/0x1420 etc will fail(no exception, but data is random)
+* GPIO, chapter 10
+* Temperature Sensor, Chapter 12
+* DDR4 sdram controller, Chapter 13
+* HyperTransPort Controller, Chapter 14
+* UART1, SPI(except its memory space 0x1c000000, where the bios is put), I2C0/1
+
+Only a few of LS7A1000's functions are implemented:
+
+* interrupt controller, include io-apic and PCIE msi
+    - but the interrupt source connection is different, table 5-1 is useless.
+* PCIE controller(only a standard model is implemented)
+    - pcie config space map at physical address range 0x2000-0000 to 0x27ff-ffff
+    - pcie memory mapped at 0x4000-0000 to 0x7fff-ffff
+    - pcie io mapped at 0x1804-0000 to 0x1804-ffff
+* RTC
+    - at 0x100d0100
+* ACPI
+    - at 0x100d0000
+
+### address spaces
+
+The final address spaces look loke this:
+
+```bash
+(qemu) info mtree
+address-space: cpu-memory-0
+address-space: memory // cpu physical memory address space, access via load/store instructions via corresponding virtual addresses
+  0000000000000000-ffffffffffffffff (prio 0, i/o): system
+    0000000000000000-000000000fffffff (prio 0, ram): alias loongarch.lowram @loongarch.ram 0000000000000000-000000000fffffff //low 256MB memory
+    0000000010000000-00000000100000ff (prio 0, i/o): loongarch_pch_pic.reg32_part1 // LS7A1000's interrupt controller regs
+    0000000010000100-000000001000039f (prio 0, i/o): loongarch_pch_pic.reg8
+    00000000100003a0-0000000010000fff (prio 0, i/o): loongarch_pch_pic.reg32_part2
+    000000001001041c-000000001001041f (prio -1000, i/o): pci-dma-cfg
+    0000000010013ffc-0000000010013fff (prio -1000, i/o): mmio fallback 1
+    00000000100d0000-00000000100d00ff (prio 0, i/o): ls7a_pm  // LS7A1000 power management functions
+      00000000100d000c-00000000100d0013 (prio 0, i/o): acpi-evt
+      00000000100d0014-00000000100d0017 (prio 0, i/o): acpi-cnt
+      00000000100d0018-00000000100d001b (prio 0, i/o): acpi-tmr
+      00000000100d0028-00000000100d002f (prio 0, i/o): acpi-gpe0
+      00000000100d0030-00000000100d0033 (prio 0, i/o): acpi-reset
+    00000000100d0100-00000000100d01ff (prio 0, i/o): ls7a_rtc
+    0000000018000000-0000000018003fff (prio 0, i/o): alias isa-io @io 0000000000000000-0000000000003fff // legacy io mapped to 0x1800-0000
+    0000000018004000-000000001800ffff (prio 0, i/o): alias pcie-io @gpex_ioport_window 0000000000004000-000000000000ffff // pcie io mapped here
+    000000001c000000-000000001c3fffff (prio 0, rom): loongarch.bios // bios start at 0x1c000000
+    000000001c400000-000000001c4fffff (prio 0, rom): fdt
+    000000001e020000-000000001e020007 (prio 0, i/o): fwcfg.data
+    000000001e020008-000000001e020009 (prio 0, i/o): fwcfg.ctl
+    000000001fe001e0-000000001fe001e7 (prio 0, i/o): serial // uart port
+    0000000020000000-0000000027ffffff (prio 0, i/o): alias pcie-ecam @pcie-mmcfg-mmio 0000000000000000-0000000007ffffff //pcie config mapped
+    000000002ff00000-000000002ff00007 (prio 0, i/o): loongarch_pch_msi //LS7A MSI interrupt
+    0000000040000000-000000007fffffff (prio 0, i/o): alias pcie-mmio @gpex_mmio_window 0000000040000000-000000007fffffff //pcie memory mapped
+    0000000090000000-000000017fffffff (prio 0, ram): alias loongarch.highmem @loongarch.ram 0000000010000000-00000000ffffffff // high part ram
+
+...
+
+address-space: IOCSR  // a special address space accessed via iocsrrd/iocsrwr instructions.
+  0000000000000000-ffffffffffffffff (prio 0, i/o): iocsr
+    0000000000000000-0000000000000427 (prio 0, i/o): iocsr_misc  // only FEATURE_REG(0x8)/VENDOR_REG(0x10)/CPUNAME_REG(0x20)/MISC_FUNC_REG(0x420) read simulated
+    0000000000001000-00000000000010ff (prio 0, i/o): loongarch_ipi
+    0000000000001400-0000000000001cff (prio 0, i/o): loongarch_extioi // not every part of this simulated, only the following subregions, that is, no legacy irqs, only extended irqs
+      0000000000001400-00000000000014bf (prio 0, i/o): loongarch_extioi.nodetype
+      00000000000014c0-000000000000167f (prio 0, i/o): loongarch_extioi.ipmap_enable
+      0000000000001680-0000000000001bff (prio 0, i/o): loongarch_extioi.bounce_coreisr
+      0000000000001c00-0000000000001cff (prio 0, i/o): loongarch_extioi.coremap
+
+memory-region: gpex_ioport_window //pcie IO space
+  0000000000000000-000000000000ffff (prio 0, i/o): gpex_ioport_window
+    0000000000000000-000000000000ffff (prio 0, i/o): gpex_ioport
+      0000000000004000-000000000000401f (prio 1, i/o): virtio-pci
+
+memory-region: pcie-mmcfg-mmio //pcie cfg space
+  0000000000000000-000000001fffffff (prio 0, i/o): pcie-mmcfg-mmio
+
+memory-region: gpex_mmio_window  //pcie memory space
+  0000000000000000-ffffffffffffffff (prio 0, i/o): gpex_mmio_window
+    0000000000000000-ffffffffffffffff (prio 0, i/o): gpex_mmio
+      0000000040040000-0000000040043fff (prio 1, i/o): virtio-pci
+        0000000040040000-0000000040040fff (prio 0, i/o): virtio-pci-common-virtio-net
+        0000000040041000-0000000040041fff (prio 0, i/o): virtio-pci-isr-virtio-net
+        0000000040042000-0000000040042fff (prio 0, i/o): virtio-pci-device-virtio-net
+        0000000040043000-0000000040043fff (prio 0, i/o): virtio-pci-notify-virtio-net
+      0000000040044000-0000000040044fff (prio 1, i/o): virtio-net-pci-msix
+        0000000040044000-000000004004403f (prio 0, i/o): msix-table
+        0000000040044800-0000000040044807 (prio 0, i/o): msix-pba
+...
+```
+
+Some notes:
+
+1. If a load/store visit some physical address but it does not exist in cpu-memory-0 address space, an exception will be triggered.
+2. For addresses that do exist, the access might not work at all. For i/o address ranges, it depends on whether qemu has handled all the addresses in that range. For example, [0-0x428) is claimed by iocsr_misc,
+
+    0000000000000000-0000000000000427 (prio 0, i/o): iocsr_misc
+
+The accesses falled in this range will be handled by loongarch_qemu_ops:
+
+    memory_region_init_io(&env->iocsr_mem, OBJECT(la_cpu), &loongarch_qemu_ops,
+                              NULL, "iocsr_misc", IOCSR_MEM_SIZE);
+
+but loongarch_qemu_ops is implemented like this:
+
+    static void loongarch_qemu_write(void *opaque, hwaddr addr,
+                                     uint64_t val, unsigned size)
+    {
+    }
+
+    static uint64_t loongarch_qemu_read(void *opaque, hwaddr addr, unsigned size)
+    {
+        uint64_t feature = 0UL;
+
+        switch (addr) {
+        case FEATURE_REG:
+            feature |= 1UL << IOCSRF_MSI | 1UL << IOCSRF_EXTIOI |
+                       1UL << IOCSRF_CSRIPI;
+            return feature ;
+        case VENDOR_REG:
+            return *(uint64_t *)"Loongson";
+        case CPUNAME_REG:
+            return *(uint64_t *)"3A5000";
+        case MISC_FUNC_REG:
+            return 1UL << IOCSRM_EXTIOI_EN;
+        }
+        return 0;
+    }
+
+    static const MemoryRegionOps loongarch_qemu_ops = {
+        .read = loongarch_qemu_read,
+        .write = loongarch_qemu_write,
+        .endianness = DEVICE_LITTLE_ENDIAN,
+        .valid = {
+            .min_access_size = 4,
+            .max_access_size = 8,
+        },
+        .impl = {
+            .min_access_size = 4,
+            .max_access_size = 8,
+        },
+    };
+
+Nothing will be do for writes, and only 4 addresses will give out meaningful responses.
+
+* to make sure the exact emulated status, the best way is to check the qemu source code: hw/loongarch/loongson3.c and the source code for referenced qemu device classes(like hw/intc/loongarch_extioi.c for TYPE_LOONGARCH_EXTIOI).
+
+### interruption hierarchy
+
+External interrupts roughly goes into the cpu via such path:
+    CPU core interrupt controller(HWI0-HWI7) <-
+    <- extended Interrupt controller(extioi_pic in qemu, 256 irqs)
+    <- LS7A1000 interrupt controller(pch_pic in qemu, 64 irqs; pch_msi, 192 irqs)
+    <-  4 PCIE interrupt output connect to pch_pic 16,17,18,19
+        LS7A UART/RTC/SCI connect to pch_pic 2/3/4
+
+There are some internal interrupts that can go other ways. For example, inter-core IPI,
+timer, performance counter interrupt goes directly into cpu core.
+
+## files
 
 Here is a short explanation for major files in this repository:
 
@@ -100,7 +264,7 @@ Here is a short explanation for major files in this repository:
 
 ## source and build methods
 
-For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/loongson/build-tools/releases/download/2021.12.21/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). Unpack this package to /opt, then add /opt/cross-tools/bin to your PATH. 
+For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/loongson/build-tools/releases/download/2021.12.21/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). Unpack this package to /opt, then add /opt/cross-tools/bin to your PATH.
 
     foxsen@foxsen-ThinkPad-T450:~/xinyan/algo$ /opt/cross-tools-1218/bin/loongarch64-unknown-linux-gnu-gcc -v
     Using built-in specs.
@@ -112,12 +276,12 @@ For bios, kernel and busybox, the resulting code is loongarch, so a cross compil
     Supported LTO compression algorithms: zlib zstd
     gcc version 12.0.0 20211202 (experimental) (GCC)
 
-This toolchain has two known flaws on ubuntu platforms: 
+This toolchain has two known flaws on ubuntu platforms:
 
 1. Due to statically linking, the bfd plugin libdep.so will lead to failures. rm -f /opt/cross-tools/lib/bfd-plugins/libdep.so can fix it.
 2. Also due to statically linking, the locale handling is not so right that it fail the kernel script check. run the following command before make:
 
-    export LC_ALL=C; 
+    export LC_ALL=C;
     export LANG=C;
     export LANGUAGE=C
 
@@ -227,7 +391,7 @@ You can create a file with the above content, for example, env.sh. then type:
 source env.sh
 ```
 
-before the following operations. This is to setup necessary environments in current shell. 
+before the following operations. This is to setup necessary environments in current shell.
 Don't run it like this because it won't affect current shell:
 
 ```bash
@@ -263,7 +427,7 @@ A simple example session is demoed in the following pictures:
 
 ### about the dependence of qemu/gdb binary
 
-Different hosts have different installed packages and versions, it is normal that the provided qemu and gdb binary might fail to run. Please building your own version according the instructions in previous section. 
+Different hosts have different installed packages and versions, it is normal that the provided qemu and gdb binary might fail to run. Please building your own version according the instructions in previous section.
 
 ### Cross debugging the linux kernel
 
@@ -289,7 +453,7 @@ Then:
 * 内核启动入口代码需要做两件事：（参见arch/loongarch/kernel/head.S）
 
     1. 设置一个直接地址映射窗口（参见loongarch体系结构手册，5.2.1节），把内核用到的64地址抹去高位映射到物理内存。目前linux内核是设置0x8000xxxx-xxxxxxxx和0x9000xxxx-xxxxxxxx地址抹去最高的8和9为其物理地址，前者用于uncache访问(即不通过高速缓存去load/store)，后者用于cache访问。
-    2. 做个代码自跳转，使得后续代码执行的PC和链接用的虚拟地址匹配。BIOS刚跳转到内核时，用的地址是抹去了高32位的地址（相当于物理地址），步骤1使得链接时的高地址可以访问到同样的物理内存，这里则换回到原始的虚拟地址。 
+    2. 做个代码自跳转，使得后续代码执行的PC和链接用的虚拟地址匹配。BIOS刚跳转到内核时，用的地址是抹去了高32位的地址（相当于物理地址），步骤1使得链接时的高地址可以访问到同样的物理内存，这里则换回到原始的虚拟地址。
 
 head.S相应代码如下：
 
@@ -314,7 +478,7 @@ head.S相应代码如下：
 
 ### TODO
 
-* Improve the bios speed. Presently, the bios code is not customized for qemu. It will take around 10 seconds to boot to the point of kernel loading. We plan to reduce this time later. 
+* Improve the bios speed. Presently, the bios code is not customized for qemu. It will take around 10 seconds to boot to the point of kernel loading. We plan to reduce this time later.
 * some full examples of kernel debugging
 * a docker file to reproduce all the components
 * More tests and fixes
