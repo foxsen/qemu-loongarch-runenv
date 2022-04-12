@@ -105,7 +105,8 @@ The following LS3A5000 functions are NOT implemented(might be incomplete):
 Only a few of LS7A1000's functions are implemented:
 
 * interrupt controller, include io-apic and PCIE msi
-    - but the interrupt source connection is different, table 5-1 is useless.
+    - but the interrupt source connection is different, not everything work as manual
+    - see the section 'interrupt hierarchy' for more information
 * PCIE controller(only a standard model is implemented)
     - pcie config space map at physical address range 0x2000-0000 to 0x27ff-ffff
     - pcie memory mapped at 0x4000-0000 to 0x7fff-ffff
@@ -239,17 +240,59 @@ Nothing will be do for writes, and only 4 addresses will give out meaningful res
 
 * to make sure the exact emulated status, the best way is to check the qemu source code: hw/loongarch/loongson3.c and the source code for referenced qemu device classes(like hw/intc/loongarch_extioi.c for TYPE_LOONGARCH_EXTIOI).
 
-### interruption hierarchy
+### interrupt hierarchy
 
 External interrupts roughly goes into the cpu via such path:
     CPU core interrupt controller(HWI0-HWI7) <-
     <- extended Interrupt controller(extioi_pic in qemu, 256 irqs)
-    <- LS7A1000 interrupt controller(pch_pic in qemu, 64 irqs; pch_msi, 192 irqs)
+    <- LS7A1000 interrupt controller(pch_pic in qemu, 64 irqs; pch_msi, 192 irqs, refer to 7A1000 user manual)
     <-  4 PCIE interrupt output connect to pch_pic 16,17,18,19
         LS7A UART/RTC/SCI connect to pch_pic 2/3/4
 
+Notes on extioi interrupt controller:
+
+1. extioi stand for extended io interrupt. Refer to 3A5000 user manual 11.2.
+2. Each extioi irq is mapped to HWI0-7, every 32bit as a group is mapped by iocsr reg 0x14c0-0x14c7(table 11-12). By default, all 256 irqs are mapped to HWI0(cpu int 2). Each extioi irq is mapped to some cpu core, by iocsr reg 0x1c00-0x1cFE. For example, if iocsr 0x1c00 is written to 0x48, the cpu use will value in EXT_IOI_node_type4 as target node, then use core 3(8=1000, so bit 3 set) in that node. Each node of Loongson3 has 4 cores, and maximum 16 nodes are supported in a system. By default, all irqs routed to node 0 core 0. 
+3. Description of qemu's implementation by registers:
+    - table 11-6. iocsr 0x420 is not fully emulated, read only, writes discarded. EXT_INT_en is default on.
+    - table 11-7. work partly. only take effect at changing time. Other times are effectively always enabled.
+    - table 11-8. Read/Writable, but no real effect.
+    - table 11-9, not supported.
+    - table 11-10, work as expected.
+    - table 11-12, work as expected.
+    - table 11-13/14/15, mostly work as expected, no bounce support
+
+Notes on LS7A1000 interrupt controller
+
+1. all pch_pic irqs are mapped to extioi_pic irqs by ht message interrupt vectors(offset 0x200-0x238). By default, all irqs are mapped to extioi input 0.
+2. Description of qemu's implementation by registers:
+    - offset 0/0x20/0x60/0x80/0x380/0x3a0/0x3e0, work
+    - offset 0x40/0xc0/0xe0/0x100-0x13f, read/writable, no effect
+    - offset 0x200-0x23f, work as a general routing map, default all zero. each byte map a pch_pic to extioi
+    - offset 0x300/0x320, not supported
+
+To support Uart(io port at 0x1fe001e0) interrupt, you should:
+   1. set LS7A1000 interrupt controller:
+      unmask input pin2 (bit 2 of reg at 0x20)
+      set edge trigger or level trigger mode(0x60)
+      set ht message interrupt vector (byte at offset 0x202 equal the target extioi irq number)
+   2. setup extioi
+      enable mapped extioi irq
+   3. setup cpu core irq
+   4. global irq enable
+
+When a uart irq triggers, you should:
+   1. ack LS7A1000 intc
+      by write 1<<irq bit to intclr reg(edge triggered mode)
+   2. ack extioi intc
+      by write 1 to its isr reg(iocsr 0x1800-)
+   3. ack cpu intc
+   4. handle the device state(receive pending chars or send out fifo chars)
+       
 There are some internal interrupts that can go other ways. For example, inter-core IPI,
 timer, performance counter interrupt goes directly into cpu core.
+
+Read qemu source code(hw/intc/loongarch_*, hw/loongarch/loongson3.c) for more exact information. 
 
 ## files
 
