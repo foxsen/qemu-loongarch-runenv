@@ -264,8 +264,9 @@ Notes on extioi interrupt controller:
 
 Notes on LS7A1000 interrupt controller
 
-1. all pch_pic irqs are mapped to extioi_pic irqs by ht message interrupt vectors(offset 0x200-0x238). By default, all irqs are mapped to extioi input 0.
-2. Description of qemu's implementation by registers:
+1. Refer to LS7A1000 user manual, chapter 5.
+2. all pch_pic irqs are mapped to extioi_pic irqs by ht message interrupt vectors(offset 0x200-0x238). By default, all irqs are mapped to extioi input 0.
+3. Description of qemu's implementation by registers:
     - offset 0/0x20/0x60/0x80/0x380/0x3a0/0x3e0, work
     - offset 0x40/0xc0/0xe0/0x100-0x13f, read/writable, no effect
     - offset 0x200-0x23f, work as a general routing map, default all zero. each byte map a pch_pic to extioi
