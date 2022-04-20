@@ -549,4 +549,4 @@ head.S相应代码如下：
 * See https://github.com/loongson and https://github.com/loongarch64 for loongarch documents and important software repositories.
 * See https://github.com/sunhaiyong1978/CLFS-for-LoongArch/ to learn some knowledge about linux distribution making. The beginning part of the CLFS document is how to make the cross toolchain.
 * See https://qemu.org for general qemu related documents.
-
+* [bios and kernel interface spec](./loongarch_bios_and_kernel_interface_specification_v3.1.pdf).
