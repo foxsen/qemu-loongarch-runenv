@@ -544,6 +544,10 @@ head.S相应代码如下：
 * a docker file to reproduce all the components
 * More tests and fixes
 
+## 参考内核实现
+
+mini_kernel*目录存放一些参考实现代码，将逐步完善。
+
 ## References
 
 * See https://github.com/loongson and https://github.com/loongarch64 for loongarch documents and important software repositories.
