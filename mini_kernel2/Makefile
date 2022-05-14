@@ -4,7 +4,7 @@ TOOLPREFIX = loongarch64-unknown-linux-gnu-
 CC = $(TOOLPREFIX)gcc
 LD = $(TOOLPREFIX)ld
 
-CFLAGS = -Wall -O0 -g3 -march=loongarch64 -mabi=lp64s -ffreestanding -fno-common -nostdlib -I. -fno-stack-protector -fno-pie -no-pie 
+CFLAGS = -Wall -O2 -g3 -march=loongarch64 -mabi=lp64s -ffreestanding -fno-common -nostdlib -I. -fno-stack-protector -fno-pie -no-pie 
 LDFLAGS = -z max-page-size=4096
 
 kernel: $(OBJS) ld.script
