@@ -70,7 +70,8 @@ if [ $USE_GRAPHIC = "no" ] ; then
 else
     # run with graphic
     CMDLINE="root=/dev/ram console=tty0 rdinit=/init"
-    GRAPHIC="-vga virtio -device virtio-keyboard-pci -device virtio-mouse-pci"
+#    GRAPHIC="-vga virtio -device virtio-keyboard-pci -device virtio-mouse-pci"
+    GRAPHIC="-vga virtio -device qemu-xhci -device usb-kbd -device usb-mouse"
 fi
 
 set -x
