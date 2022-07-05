@@ -325,9 +325,9 @@ Here is a short explanation for major files in this repository:
 
 ## source and build methods
 
-For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/loongson/build-tools/releases/download/2021.12.21/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). Unpack this package to /opt, then add /opt/cross-tools/bin to your PATH.
+For bios, kernel and busybox, the resulting code is loongarch, so a cross compiling toolchain is needed. Used toolchain is [here](https://github.com/foxsen/qemu-loongarch-runenv/releases/download/untagged-faceb88f2c6b1e279103/loongarch64-clfs-2021-12-18-cross-tools-gcc-full.tar.xz). Unpack this package to /opt, then add /opt/cross-tools/bin to your PATH.
 
-    foxsen@foxsen-ThinkPad-T450:~/xinyan/algo$ /opt/cross-tools-1218/bin/loongarch64-unknown-linux-gnu-gcc -v
+    foxsen@foxsen-ThinkPad-T450:~/xinyan/algo$ /opt/cross-tools/bin/loongarch64-unknown-linux-gnu-gcc -v
     Using built-in specs.
     COLLECT_GCC=/opt/cross-tools-1218/bin/loongarch64-unknown-linux-gnu-gcc
     COLLECT_LTO_WRAPPER=/opt/cross-tools-1218/bin/../libexec/gcc/loongarch64-unknown-linux-gnu/12.0.0/lto-wrapper
