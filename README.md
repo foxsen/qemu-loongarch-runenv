@@ -367,6 +367,7 @@ Note: Please DON'T use gcc8 from loongnix: the ABI is changing! we are using the
 
 The binary here is built from https://github.com/foxsen/qemu.git tag loongarch-v2022-05-02 on ubuntu 20.04.
 
+```bash
 git clone https://github.com/foxsen/qemu.git
 <install necessary dependence packages, refer to qemu build doc>
 git checkout loongarch-v2022-05-02
@@ -375,6 +376,7 @@ mkdir build
 cd ./build/
 ../configure --target-list=loongarch64-softmmu --disable-werror (调试版本加--enable-debug)
 make -j4
+```
 
 Check branch loongarch for possible updates.
 
@@ -471,6 +473,7 @@ Check loongarch-qemu branch for updates.
 
 The binary here is built from https://github.com/foxsen/binutils-gdb tag loongarch-v2022-03-10 on ubuntu 20.04.
 
+```bash
 git clone https://github.com/foxsen/binutils-gdb
 git checkout loongarch-v2022-03-10
 mkdir build
@@ -478,6 +481,7 @@ cd build
 ../configure --target=loongarch64-unknown-linux-gnu --prefix=/opt/gdb
 make
 sudo make install
+```
 
 A simple example session is demoed in the following pictures:
 
