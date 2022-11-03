@@ -33,7 +33,8 @@ KERNEL="./vmlinux"
 INITRD="busybox-rootfs.img"
 USE_GRAPHIC="no"
 DEBUG=''
-QEMU="./qemu-system-loongarch64"
+HOST_ARCH=$(uname -m)
+QEMU="./qemu/$HOST_ARCH/qemu-system-loongarch64"
 
 # Get the options
 while getopts ":b:c:dDghi:k:m:q:" option; do
