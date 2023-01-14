@@ -1,5 +1,8 @@
 # qemu-loongarch-runenv
 
+** NOTE: upstream qemu/kernel/tianocore has supported LoongArch, please refer to devel branch for new environment. **
+** TODO: Due to the changes of the bios and kernel interface, examples need modification to work with new environment. **
+
 This is an environment for running loongarch bios and OS on X86 machines, all
 components are open source:
 
