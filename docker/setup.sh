@@ -4,6 +4,6 @@
 ./setup-qemu.sh
 ./setup-bios.sh
 ./setup-kernel.sh
-./setup-misc.sh
+#./setup-misc.sh
 
 

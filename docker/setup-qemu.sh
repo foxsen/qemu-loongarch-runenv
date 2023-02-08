@@ -13,6 +13,9 @@ tar xpvf ./qemu-${VER}.tar.xz
 ln -sf ./qemu-${VER} ./qemu
 cd qemu-${VER}
 
+#enable cfi flash
+cat ../add_cfi01_pflash_device.patch | patch -p1
+
 mkdir build
 cd build && ../configure --target-list=loongarch64-softmmu
 make -j8

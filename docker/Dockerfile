@@ -16,7 +16,9 @@ RUN locale-gen zh_CN.UTF-8
 
 COPY ./*.sh /qemu-loongarch-runenv/
 
-#COPY ./*.patch /qemu-loongarch-runenv/
+COPY ./*.patch /qemu-loongarch-runenv/
+
+COPY ./poky-minimal.ext4 /qemu-loongarch-runenv/
 
 WORKDIR /qemu-loongarch-runenv
 ENV LANG zh_CN.UTF-8
