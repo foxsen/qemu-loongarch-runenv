@@ -1,9 +1,8 @@
 # interrupts and exceptions handler
 # push all registers, call trap_handler(), restore, return.
 #
-.text 
 .globl trap_entry
-.align 16
+.align 14
 trap_entry:
         // make room to save registers.
         addi.d $sp, $sp, -256

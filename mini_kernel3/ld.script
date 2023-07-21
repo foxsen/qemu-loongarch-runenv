@@ -4,14 +4,12 @@ ENTRY( kernel_entry )
 SECTIONS
 {
 #  . = 0x9000000000100000;
-  . = 0x00100000;
+  . = 0x02000000;
 
   .text : {
+    . = ALIGN(16);
     *(.text .text.*)
     PROVIDE(etext = .);
-    . = ALIGN(0x1000);
-    _keentry = .;
-    *(k_eentry)
   }
 
   .rodata : {
@@ -20,6 +18,9 @@ SECTIONS
     . = ALIGN(16);
     *(.rodata .rodata.*)
   }
+
+# to seperate RO/RW segments, new binutils warns for RWX segments
+  . = ALIGN (CONSTANT (COMMONPAGESIZE));
 
   .data : {
     . = ALIGN(16);

@@ -1,4 +1,4 @@
-OBJS := hello_kernel.o
+OBJS := serial.o printf.o hello_kernel.o trap.o trap_entry.o head.o shadow_stack.o
 TOOLPREFIX = loongarch64-unknown-linux-gnu-
 
 CC = $(TOOLPREFIX)gcc
@@ -10,7 +10,10 @@ LDFLAGS = -z max-page-size=16384
 kernel: $(OBJS) ld.script
 	$(LD) $(LDFLAGS) -T ld.script -o kernel $(OBJS)
 
-%.o : %.c
+%.o : %.c %.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.o : %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 all: kernel 
