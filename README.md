@@ -1,5 +1,7 @@
 # qemu-loongarch-runenv
 
+** Since upstream support of loongarch qemu is quite mature, this repository is no longer maintained. It will be marked as read only **
+
 ** NOTE: upstream qemu/kernel/tianocore has supported LoongArch, please refer to devel branch for new environment. **
 ** TODO: Due to the changes of the bios and kernel interface, examples need modification to work with new environment. **
 
